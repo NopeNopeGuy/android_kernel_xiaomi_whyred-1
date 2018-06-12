@@ -1,5 +1,5 @@
 menu "Tech Packages"
 
-source techpack/data/Kconfig
+source techpack/audio/Kconfig
 
 endmenu
