@@ -7078,9 +7078,8 @@ int sched_cpu_deactivate(unsigned int cpu)
 	 */
 
 #ifdef CONFIG_PREEMPT
-	synchronize_sched();
-#endif
 	synchronize_rcu();
+#endif
 
 #ifdef CONFIG_SCHED_SMT
 	/*
