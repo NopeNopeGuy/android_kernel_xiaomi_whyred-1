@@ -310,7 +310,7 @@ static struct scsi_host_template tcm_loop_driver_template = {
 	.sg_tablesize		= 256,
 	.cmd_per_lun		= 1024,
 	.max_sectors		= 0xFFFF,
-	.use_clustering		= DISABLE_CLUSTERING,
+	.dma_boundary		= PAGE_SIZE - 1,
 	.module			= THIS_MODULE,
 	.track_queue_depth	= 1,
 };
