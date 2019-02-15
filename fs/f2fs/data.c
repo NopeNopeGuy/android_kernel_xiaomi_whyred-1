@@ -120,7 +120,7 @@ struct bio_post_read_ctx {
 static void f2fs_finish_read_bio(struct bio *bio)
 {
 	struct bio_vec *bv;
-	int iter_all;
+	struct bvec_iter_all iter_all;
 
 	/*
 	 * Update and unlock the bio's pagecache pages, and put the
@@ -176,7 +176,7 @@ static void f2fs_verify_bio(struct work_struct *work)
 	 */
 	if (may_have_compressed_pages) {
 		struct bio_vec *bv;
-		int iter_all;
+		struct bvec_iter_all iter_all;
 
 		bio_for_each_segment_all(bv, bio, iter_all) {
 			struct page *page = bv->bv_page;
@@ -225,7 +225,7 @@ static void f2fs_verify_and_finish_bio(struct bio *bio)
 static void f2fs_handle_step_decompress(struct bio_post_read_ctx *ctx)
 {
 	struct bio_vec *bv;
-	int iter_all;
+	struct bvec_iter_all iter_all;
 	bool all_compressed = true;
 	block_t blkaddr = ctx->fs_blkaddr;
 
@@ -296,7 +296,7 @@ static void f2fs_write_end_io(struct bio *bio)
 {
 	struct f2fs_sb_info *sbi;
 	struct bio_vec *bvec;
-	int iter_all;
+	struct bvec_iter_all iter_all;
 
 	iostat_update_and_unbind_ctx(bio, 1);
 	sbi = bio->bi_private;
@@ -570,7 +570,7 @@ static bool __has_merged_page(struct bio *bio, struct inode *inode,
 						struct page *page, nid_t ino)
 {
 	struct bio_vec *bvec;
-	int iter_all;
+	struct bvec_iter_all iter_all;
 
 	if (!bio)
 		return false;
