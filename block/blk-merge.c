@@ -357,7 +357,7 @@ EXPORT_SYMBOL(blk_queue_split);
 static unsigned int __blk_recalc_rq_segments(struct request_queue *q,
 					     struct bio *bio)
 {
-	struct bio_vec bv, bvprv = { NULL };
+	struct bio_vec uninitialized_var(bv), bvprv = { NULL };
 	int cluster;
 	unsigned int seg_size, nr_phys_segs;
 	unsigned front_seg_size = bio->bi_seg_front_size;
@@ -404,8 +404,10 @@ new_segment:
 			new_bio = false;
 		}
 		bbio = bio;
-		bvprv = bv;
-		new_bio = true;
+		if (likely(bio->bi_iter.bi_size)) {
+			bvprv = bv;
+			new_bio = true;
+		}
 	}
 
 	fbio->bi_seg_front_size = front_seg_size;
@@ -536,7 +538,7 @@ static int __blk_bios_map_sg(struct request_queue *q, struct bio *bio,
 			     struct scatterlist *sglist,
 			     struct scatterlist **sg)
 {
-	struct bio_vec bvec, bvprv = { NULL };
+	struct bio_vec uninitialized_var(bvec), bvprv = { NULL };
 	struct bvec_iter iter;
 	int cluster = blk_queue_cluster(q), nsegs = 0;
 	bool new_bio = false;
@@ -559,8 +561,10 @@ static int __blk_bios_map_sg(struct request_queue *q, struct bio *bio,
  next_bvec:
 			new_bio = false;
 		}
-		bvprv = bvec;
-		new_bio = true;
+		if (likely(bio->bi_iter.bi_size)) {
+			bvprv = bvec;
+			new_bio = true;
+		}
 	}
 
 	return nsegs;
