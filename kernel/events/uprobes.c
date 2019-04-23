@@ -59,7 +59,7 @@ static DEFINE_SPINLOCK(uprobes_treelock);	/* serialize rbtree access */
 static struct mutex uprobes_mmap_mutex[UPROBES_HASH_SZ];
 #define uprobes_mmap_hash(v)	(&uprobes_mmap_mutex[((unsigned long)(v)) % UPROBES_HASH_SZ])
 
-static struct percpu_rw_semaphore dup_mmap_sem;
+DEFINE_STATIC_PERCPU_RWSEM(dup_mmap_sem);
 
 /* Have a copy of original instruction */
 #define UPROBE_COPY_INSN	0
