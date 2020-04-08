@@ -54,6 +54,8 @@ KBUILD_CFLAGS	+= -mgeneral-regs-only $(lseinstr) $(brokengasinst) $(compat_vdso)
 ifeq ($(CONFIG_ARCH_SDM660), y)
 ifeq ($(CONFIG_CC_IS_GCC), y)
 KBUILD_CFLAGS	+= -mcpu=cortex-a73.cortex-a53
+else
+KBUILD_CFLAGS	+= -mcpu=cortex-a53 -mtune=cortex-a53
 endif
 endif
 
