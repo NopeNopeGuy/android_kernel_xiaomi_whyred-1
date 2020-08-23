@@ -2600,7 +2600,6 @@ extern void unregister_blkdev(unsigned int, const char *);
 extern void bdev_unhash_inode(dev_t dev);
 extern struct block_device *bdget(dev_t);
 extern struct block_device *bdgrab(struct block_device *bdev);
-extern void bd_set_size(struct block_device *, loff_t size);
 extern void bd_forget(struct inode *inode);
 extern void bdput(struct block_device *);
 extern void invalidate_bdev(struct block_device *);
@@ -2612,6 +2611,7 @@ extern void emergency_thaw_all(void);
 extern void emergency_thaw_bdev(struct super_block *sb);
 extern int thaw_bdev(struct block_device *bdev, struct super_block *sb);
 extern int fsync_bdev(struct block_device *);
+void bd_set_nr_sectors(struct block_device *bdev, sector_t sectors);
 
 extern struct super_block *blockdev_superblock;
 
