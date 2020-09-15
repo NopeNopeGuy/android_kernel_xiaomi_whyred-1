@@ -335,13 +335,10 @@ static void rcu_tasks_wait_gp(struct rcu_tasks *rtp)
 	// Start off with initial wait and slowly back off to 1 HZ wait.
 	fract = rtp->init_fract;
 
-	for (;;) {
+	while (!list_empty(&holdouts)) {
 		bool firstreport;
 		bool needreport;
 		int rtst;
-
-		if (list_empty(&holdouts))
-			break;
 
 		/* Slowly back off waiting for holdouts */
 		set_tasks_gp_state(rtp, RTGS_WAIT_SCAN_HOLDOUTS);
