@@ -766,5 +766,21 @@ alternative_cb_end
 	ldp	x2, x3, [sp], #16
 	ldp	x0, x1, [sp], #16
 #endif /* CONFIG_MITIGATE_SPECTRE_BRANCH_HISTORY */
+
+	/*
+	 * Check whether preempt-disabled code should yield as soon as it
+	 * is able. This is the case if re-enabling preemption a single
+	 * time results in a preempt count of zero, and the TIF_NEED_RESCHED
+	 * flag is set. (Note that the latter is stored negated in the
+	 * top word of the thread_info::preempt_count field)
+	 */
+	.macro		cond_yield, lbl:req, tmp:req
+#ifdef CONFIG_PREEMPTION
+	get_current_task \tmp
+	ldr		\tmp, [\tmp, #TSK_TI_PREEMPT]
+	sub		\tmp, \tmp, #PREEMPT_DISABLE_OFFSET
+	cbz		\tmp, \lbl
+#endif
 	.endm
-#endif	/* __ASM_ASSEMBLER_H */
+
+#endif /* __ASM_ASSEMBLER_H */
