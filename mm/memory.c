@@ -4431,8 +4431,9 @@ static inline void mm_account_fault(struct pt_regs *regs,
  * can_reuse_spf_vma() is made.
  */
 vm_fault_t __handle_speculative_fault(struct mm_struct *mm,
-			       unsigned long address, unsigned int flags,
-			       struct vm_area_struct **vma)
+			        unsigned long address, unsigned int flags,
+				struct vm_area_struct **vma,
+				struct pt_regs *regs)
 {
 	struct vm_fault vmf = {
 		.address = address,
@@ -4610,6 +4611,7 @@ vm_fault_t __handle_speculative_fault(struct mm_struct *mm,
 			count_vm_event(SPECULATIVE_PGFAULT_FILE);
 		put_vma(vmf.vma);
 		*vma = NULL;
+		mm_account_fault(regs, address, flags, ret);
 	}
 
 	/*
