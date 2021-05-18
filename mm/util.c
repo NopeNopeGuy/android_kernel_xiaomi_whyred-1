@@ -872,7 +872,7 @@ out:
  * depends on the type of object and on how much debugging is enabled.
  * For example, for a slab-cache object, the slab name is printed, and,
  * if available, the return address and stack trace from the allocation
- * of that object.
+ * and last free path of that object.
  */
 void mem_dump_obj(void *object)
 {
