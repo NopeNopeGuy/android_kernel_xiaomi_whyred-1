@@ -4,6 +4,12 @@ config XIAOMI_WHYRED
 	help
 	  Custom for E7S_pcb.
 
+config XIAOMI_TULIP
+	default n
+	bool "Custom for hardware E7T_pcb"
+	help
+	 Custom for E7T_pcb.
+
 config XIAOMI_NEW_CAMERA
 	default n
 	bool "Xiaomi new camera blobs"
