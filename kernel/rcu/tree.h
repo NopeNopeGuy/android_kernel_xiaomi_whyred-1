@@ -204,7 +204,6 @@ struct rcu_data {
 #endif /* #ifdef CONFIG_RCU_FAST_NO_HZ */
 
 	/* 4) rcu_barrier(), OOM callbacks, and expediting. */
-	raw_spinlock_t barrier_lock;	/* Protects ->barrier_seq_snap. */
 	unsigned long barrier_seq_snap;	/* Snap of rcu_state.barrier_sequence. */
 	struct rcu_head barrier_head;
 	int exp_dynticks_snap;		/* Double-check need for IPI. */
@@ -339,6 +338,8 @@ struct rcu_state {
 	unsigned long barrier_sequence;		/* ++ at start and end of */
 						/*  rcu_barrier(). */
 	/* End of fields guarded by barrier_mutex. */
+
+	raw_spinlock_t barrier_lock;		/* Protects ->barrier_seq_snap. */
 
 	struct mutex exp_mutex;			/* Serialize expedited GP. */
 	struct mutex exp_wake_mutex;		/* Serialize wakeup. */
