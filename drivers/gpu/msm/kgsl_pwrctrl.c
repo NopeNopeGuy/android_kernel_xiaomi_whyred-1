@@ -113,7 +113,7 @@ static void _record_pwrevent(struct kgsl_device *device,
 	}
 }
 
-#ifdef CONFIG_DEVFREQ_GOV_QCOM_GPUBW_MON
+#if IS_ENABLED(CONFIG_DEVFREQ_GOV_QCOM_GPUBW_MON)
 #include <soc/qcom/devfreq_devbw.h>
 
 /**
@@ -202,7 +202,7 @@ static unsigned int _adjust_pwrlevel(struct kgsl_pwrctrl *pwr, int level,
 	return level;
 }
 
-#ifdef CONFIG_DEVFREQ_GOV_QCOM_GPUBW_MON
+#if IS_ENABLED(CONFIG_DEVFREQ_GOV_QCOM_GPUBW_MON)
 static void kgsl_pwrctrl_vbif_update(void)
 {
 	/* ask a governor to vote on behalf of us */
@@ -742,35 +742,6 @@ void kgsl_pwrctrl_set_constraint(struct kgsl_device *device,
 	}
 }
 EXPORT_SYMBOL(kgsl_pwrctrl_set_constraint);
-
-/**
- * kgsl_pwrctrl_update_l2pc() - Update existing qos request
- * @device: Pointer to the kgsl_device struct
- * @timeout_us: the effective duration of qos request in usecs.
- *
- * Updates an existing qos request to avoid L2PC on the
- * CPUs (which are selected through dtsi) on which GPU
- * thread is running. This would help for performance.
- */
-void kgsl_pwrctrl_update_l2pc(struct kgsl_device *device,
-			unsigned long timeout_us)
-{
-	int cpu;
-
-	if (device->pwrctrl.l2pc_cpus_mask == 0)
-		return;
-
-	cpu = get_cpu();
-	put_cpu();
-
-	if ((1 << cpu) & device->pwrctrl.l2pc_cpus_mask) {
-		pm_qos_update_request_timeout(
-				&device->pwrctrl.l2pc_cpus_qos,
-				device->pwrctrl.pm_qos_cpu_mask_latency,
-				timeout_us);
-	}
-}
-EXPORT_SYMBOL(kgsl_pwrctrl_update_l2pc);
 
 static ssize_t thermal_pwrlevel_store(struct device *dev,
 				struct device_attribute *attr,
@@ -1718,7 +1689,7 @@ static void kgsl_pwrctrl_clk(struct kgsl_device *device, int state,
 	}
 }
 
-#ifdef CONFIG_DEVFREQ_GOV_QCOM_GPUBW_MON
+#if IS_ENABLED(CONFIG_DEVFREQ_GOV_QCOM_GPUBW_MON)
 static void kgsl_pwrctrl_suspend_devbw(struct kgsl_pwrctrl *pwr)
 {
 	if (pwr->devbw)
@@ -1916,7 +1887,7 @@ static void kgsl_thermal_timer(struct timer_list *t)
 	kgsl_schedule_work(&device->pwrctrl.thermal_cycle_ws);
 }
 
-#ifdef CONFIG_DEVFREQ_GOV_QCOM_GPUBW_MON
+#if IS_ENABLED(CONFIG_DEVFREQ_GOV_QCOM_GPUBW_MON)
 static void kgsl_pwrctrl_vbif_init(struct kgsl_device *device)
 {
 	devfreq_vbif_register_callback(kgsl_get_bw, device);
@@ -2239,9 +2210,6 @@ int kgsl_pwrctrl_init(struct kgsl_device *device)
 		goto error_cleanup_regulators;
 
 	pwr->power_flags = 0;
-
-	of_property_read_u32(device->pdev->dev.of_node, "qcom,l2pc-cpu-mask",
-			&pwr->l2pc_cpus_mask);
 
 	pwr->l2pc_update_queue = of_property_read_bool(
 				device->pdev->dev.of_node,
@@ -2833,10 +2801,6 @@ _slumber(struct kgsl_device *device)
 		kgsl_pwrctrl_set_state(device, KGSL_STATE_SLUMBER);
 		pm_qos_update_request(&device->pwrctrl.pm_qos_req_dma,
 						PM_QOS_DEFAULT_VALUE);
-		if (device->pwrctrl.l2pc_cpus_mask)
-			pm_qos_update_request(
-					&device->pwrctrl.l2pc_cpus_qos,
-					PM_QOS_DEFAULT_VALUE);
 		break;
 	case KGSL_STATE_SUSPEND:
 		complete_all(&device->hwaccess_gate);
