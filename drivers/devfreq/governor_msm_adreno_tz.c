@@ -33,10 +33,10 @@ static DEFINE_SPINLOCK(suspend_lock);
 #define MAX_TZ_VERSION		0
 
 /*
- * CEILING is 50msec, larger than any standard
+ * CEILING is 33msec, larger than any standard
  * frame length, but less than the idle timer.
  */
-#define CEILING			50000
+#define CEILING			33000
 #define TZ_RESET_ID		0x3
 #define TZ_UPDATE_ID		0x4
 #define TZ_INIT_ID		0x6
@@ -380,7 +380,16 @@ static int tz_get_target_freq(struct devfreq *devfreq, unsigned long *freq)
 
 	*freq = stats->current_frequency;
 	priv->bin.total_time += stats->total_time;
-	priv->bin.busy_time += stats->busy_time;
+	/* Scale busy_time based on HFR Ratio
+	 * only if FLOOR is exceeded
+	 */
+	if ((unsigned int)priv->bin.busy_time
+		+ stats->busy_time >= FLOOR) {
+		priv->bin.busy_time += stats->busy_time * 3;
+	} else {
+		priv->bin.busy_time += stats->busy_time * 3 / 2;
+	}
+
 
 	if (stats->private_data)
 		context_count =  *((int *)stats->private_data);
@@ -492,7 +501,7 @@ static int tz_start(struct devfreq *devfreq)
 	priv->nb.notifier_call = tz_notify;
 
 	out = 1;
-	if (devfreq->profile->max_state < MSM_ADRENO_MAX_PWRLEVELS) {
+	if (devfreq->profile->max_state < ARRAY_SIZE(tz_pwrlevels))  {
 		for (i = 0; i < devfreq->profile->max_state; i++)
 			tz_pwrlevels[out++] = devfreq->profile->freq_table[i];
 		tz_pwrlevels[0] = i;
