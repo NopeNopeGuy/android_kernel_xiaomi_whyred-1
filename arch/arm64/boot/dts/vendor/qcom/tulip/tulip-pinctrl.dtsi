@@ -12,28 +12,31 @@
 */
 
 &tlmm {
-	hall_int_active:hall_int_active {
+	hall_int_active: hall_int_active {
 		mux {
-		          pins = "gpio75";
-		          function = "gpio";
+			pins = "gpio75";
+			function = "gpio";
 		};
-		config{
-		          pins = "gpio75";
-	                  drive-strength = <6>;
-	                  bias-pull-up;
-	            };
-        };
+
+		config {
+			pins = "gpio75";
+			drive-strength = <6>;
+			bias-pull-up;
+		};
+	};
+
 	hall_int_suspend: hall_int_suspend {
 		mux {
-		          pins = "gpio75";
-		          function = "gpio";
+			pins = "gpio75";
+			function = "gpio";
 		};
-		config{
-		          pins = "gpio75";
-		          drive-strength = <6>;
-		          bias-pull-up;
+
+		config {
+			pins = "gpio75";
+			drive-strength = <6>;
+			bias-pull-up;
 		};
-        };
+	};
 
 	msm_gpio_20: msm_gpio_20 {
 		mux {
@@ -73,34 +76,6 @@
 			pins = "gpio72";
 			drive-strength=<2>;
 			bias-pull-down;
-		};
-	};
-
-	wcd_usbc_analog_en2n {
-		wcd_usbc_analog_en2n_idle: wcd_usbc_ana_en2n_idle {
-			mux {
-				pins = "gpio75";
-			};
-
-			config {
-				pins = "gpio75";
-				output-low;
-				/delete-property/ output-high;
-			};
-		};
-
-		wcd_usbc_analog_en2n_active: wcd_usbc_ana_en2n_active {
-			mux {
-				pins = "gpio75";
-			};
-
-			config {
-				pins = "gpio75";
-				bias-disable;
-				output-high;
-				/delete-property/ bias-pull-down;
-				/delete-property/ output-low;
-			};
 		};
 	};
 

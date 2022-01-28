@@ -16,12 +16,12 @@
 	status = "ok";
 		focaltech@38{
 				compatible = "focaltech,fts";	
-				reg = <0x38>;
-				interrupt-parent = <&tlmm>;			
+				reg = <0x38>;  					
+				interrupt-parent = <&tlmm>;				
 				interrupts = <67 0x02>;
 				vcc_i2c-supply=<&pm660_l11>;
 				focaltech,reset-gpio = <&tlmm 66 0x01>;
-				focaltech,irq-gpio = <&tlmm 67 0x02>;
+				focaltech,irq-gpio = <&tlmm 67 0x02>; 	
 				focaltech,max-touch-number = <10>;			
 				focaltech,display-coords =  <0 0 1080 2280>;
 
@@ -31,7 +31,7 @@
 
 				focaltech,have-key;
 				focaltech,key-number = <0>;	
-				focaltech,keys = <139 102 158>; 
+				focaltech,keys = <139 102 158>; 	
 				focaltech,key-y-coord = <2500>;
 				focaltech,key-x-coords = <200 600 800>;
 		};

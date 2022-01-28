@@ -27,6 +27,7 @@
 &firmware {
 	android {
 		/delete-node/ vbmeta;
+
 		fstab {
 			system {
 				compatible = "android,system";
@@ -36,6 +37,7 @@
 				fsmgr_flags = "wait";
 				status = "ok";
 			};
+
 			vendor {
 				fsmgr_flags = "wait";
 			};
@@ -44,7 +46,6 @@
 };
 
 &soc {
-
 	hall_switch {
 	    compatible = "hall-switch,och175";
 	    pinctrl-names = "hall_active","hall_suspend";
