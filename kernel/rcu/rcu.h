@@ -216,7 +216,9 @@ static inline void debug_rcu_head_unqueue(struct rcu_head *head)
 extern int rcu_cpu_stall_ftrace_dump;
 extern int rcu_cpu_stall_suppress;
 extern int rcu_cpu_stall_timeout;
+extern int rcu_exp_cpu_stall_timeout;
 int rcu_jiffies_till_stall_check(void);
+int rcu_exp_jiffies_till_stall_check(void);
 
 #define rcu_ftrace_dump_stall_suppress() \
 do { \
