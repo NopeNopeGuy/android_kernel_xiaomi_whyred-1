@@ -5,10 +5,8 @@ kind: pipeline
 name: WHYRED
 steps:
   - name: val
-    image: archlinux:base-devel
+    image: panchajanya1999/archlinux:latest
     commands:
-      - curl -LO "https://repo.archlinuxcn.org/x86_64/glibc-linux4-2.33-4-x86_64.pkg.tar.zst" && bsdtar -C / -xvf "glibc-linux4-2.33-4-x86_64.pkg.tar.zst"
-      - pacman -Sy && pacman -S git bc inetutils python2 cpio zip jdk-openjdk --noconfirm
       - curl https://raw.githubusercontent.com/Reinazhard/myscripts/master/clang-4.19.sh | bash
     environment:
       TELEGRAM_TOKEN:
@@ -21,10 +19,8 @@ kind: pipeline
 name: TULIP
 steps:
   - name: val
-    image: archlinux:base-devel
+    image: panchajanya1999/archlinux:latest
     commands:
-      - curl -LO "https://repo.archlinuxcn.org/x86_64/glibc-linux4-2.33-4-x86_64.pkg.tar.zst" && bsdtar -C / -xvf "glibc-linux4-2.33-4-x86_64.pkg.tar.zst"
-      - pacman -Sy && pacman -S git bc inetutils python2 cpio zip jdk-openjdk --noconfirm
       - curl https://raw.githubusercontent.com/Reinazhard/myscripts/master/tulip-4.19-clang.sh | bash
     environment: 
       TELEGRAM_TOKEN: 
