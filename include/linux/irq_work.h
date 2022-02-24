@@ -27,6 +27,10 @@ struct irq_work {
 	void (*func)(struct irq_work *);
 };
 
+#define IRQ_WORK_INIT(_func) (struct irq_work){	\
+	.func = (_func),					\
+}
+
 static inline
 void init_irq_work(struct irq_work *work, void (*func)(struct irq_work *))
 {
