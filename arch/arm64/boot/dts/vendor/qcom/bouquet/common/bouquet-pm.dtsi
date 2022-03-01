@@ -11,17 +11,6 @@
  * GNU General Public License for more details.
 */
 
-&vendor {
-	mtp_batterydata: qcom,battery-data {
-		qcom,batt-id-range-pct = <15>;
-		#include "batterydata/fg-gen3-batterydata-l6650sun-4000mah.dtsi"
-		#include "batterydata/fg-gen3-batterydata-l6650cos-4000mah.dtsi"
-		#include "batterydata/fg-gen3-batterydata-l6650desay-4000mah.dtsi"
-		/delete-node/ qcom,itech_3000mah;
-		/delete-node/ qcom,ascent_3450mah;
-	};
-};
-
 &pm660_charger {
 	qcom,micro-usb;
 	qcom,usb-icl-ua = <2000000>;
