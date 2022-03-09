@@ -2079,9 +2079,6 @@ static void ffs_func_eps_disable(struct ffs_function *func)
 	unsigned count            = func->ffs->eps_count;
 	unsigned long flags;
 
-	ffs_log("enter: state %d setup_state %d flag %lu", func->ffs->state,
-		func->ffs->setup_state, func->ffs->flags);
-
 	spin_lock_irqsave(&func->ffs->eps_lock, flags);
 	while (count--) {
 		/* pending requests get nuked */
