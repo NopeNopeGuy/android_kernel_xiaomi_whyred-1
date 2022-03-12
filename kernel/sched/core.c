@@ -2956,10 +2956,10 @@ int task_call_func(struct task_struct *p, task_call_f func, void *arg)
 
 	raw_spin_lock_irqsave(&p->pi_lock, rf.flags);
 
-	state = READ_ONCE(p->__state);
+	state = READ_ONCE(p->state);
 
 	/*
-	 * Ensure we load p->on_rq after p->__state, otherwise it would be
+	 * Ensure we load p->on_rq after p->state, otherwise it would be
 	 * possible to, falsely, observe p->on_rq == 0.
 	 *
 	 * See try_to_wake_up() for a longer comment.
@@ -2982,7 +2982,7 @@ int task_call_func(struct task_struct *p, task_call_f func, void *arg)
 	 *  - running, and we're holding off de-schedule (rq->lock)
 	 *
 	 * The called function (@func) can use: task_curr(), p->on_rq and
-	 * p->__state to differentiate between these states.
+	 * p->state to differentiate between these states.
 	 */
 	ret = func(p, arg);
 

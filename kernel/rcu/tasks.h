@@ -111,23 +111,13 @@ struct rcu_tasks {
 static void call_rcu_tasks_iw_wakeup(struct irq_work *iwp);
 
 #define DEFINE_RCU_TASKS(rt_name, gp, call, n)						\
-static DEFINE_PER_CPU(struct rcu_tasks_percpu, rt_name ## __percpu) = {			\
-	.lock = __RAW_SPIN_LOCK_UNLOCKED(rt_name ## __percpu.cbs_pcpu_lock),		\
-	.rtp_irq_work = IRQ_WORK_INIT(call_rcu_tasks_iw_wakeup),			\
-};											\
 static struct rcu_tasks rt_name =							\
 {											\
 	.cbs_wq = __WAIT_QUEUE_HEAD_INITIALIZER(rt_name.cbs_wq),			\
 	.cbs_gbl_lock = __RAW_SPIN_LOCK_UNLOCKED(rt_name.cbs_gbl_lock),			\
 	.gp_func = gp,									\
 	.call_func = call,								\
-	.rtpcpu = &rt_name ## __percpu,							\
 	.name = n,									\
-	.percpu_enqueue_shift = ilog2(CONFIG_NR_CPUS) + 1,				\
-	.percpu_enqueue_lim = 1,							\
-	.percpu_dequeue_lim = 1,							\
-	.barrier_q_mutex = __MUTEX_INITIALIZER(rt_name.barrier_q_mutex),		\
-	.barrier_q_seq = (0UL - 50UL) << RCU_SEQ_CTR_SHIFT,				\
 	.kname = #rt_name,								\
 }
 
