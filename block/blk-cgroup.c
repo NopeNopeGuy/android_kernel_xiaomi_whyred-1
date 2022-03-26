@@ -355,9 +355,9 @@ struct blkcg_gq *blkg_lookup_create(struct blkcg *blkcg,
 	if (unlikely(!blkg)) {
 		unsigned long flags;
 
-		spin_lock_irqsave(&q->queue_lock, flags);
+		spin_lock_irqsave(q->queue_lock, flags);
 		blkg = __blkg_lookup_create(blkcg, q);
-		spin_unlock_irqrestore(&q->queue_lock, flags);
+		spin_unlock_irqrestore(q->queue_lock, flags);
 	}
 
 	return blkg;
