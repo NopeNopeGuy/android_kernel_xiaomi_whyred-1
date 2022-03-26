@@ -121,6 +121,7 @@ struct bio_post_read_ctx {
 
 static void f2fs_finish_read_bio(struct bio *bio)
 {
+	int i;
 	struct bio_vec *bv;
 	struct bvec_iter_all iter_all;
 
@@ -128,7 +129,7 @@ static void f2fs_finish_read_bio(struct bio *bio)
 	 * Update and unlock the bio's pagecache pages, and put the
 	 * decompression context for any compressed pages.
 	 */
-	bio_for_each_segment_all(bv, bio, iter_all) {
+	bio_for_each_segment_all(bv, bio, i, iter_all) {
 		struct page *page = bv->bv_page;
 
 		if (f2fs_is_compressed_page(page)) {
@@ -157,9 +158,11 @@ static void f2fs_finish_read_bio(struct bio *bio)
 
 static void f2fs_verify_bio(struct work_struct *work)
 {
+	int i;
 	struct bio_post_read_ctx *ctx =
 		container_of(work, struct bio_post_read_ctx, work);
 	struct bio *bio = ctx->bio;
+	struct bvec_iter_all iter_all;
 	bool may_have_compressed_pages = (ctx->enabled_steps & STEP_DECOMPRESS);
 
 	/*
@@ -178,9 +181,8 @@ static void f2fs_verify_bio(struct work_struct *work)
 	 */
 	if (may_have_compressed_pages) {
 		struct bio_vec *bv;
-		int iter_all;
 
-		bio_for_each_segment_all(bv, bio, iter_all) {
+		bio_for_each_segment_all(bv, bio, i, iter_all) {
 			struct page *page = bv->bv_page;
 
 			if (!f2fs_is_compressed_page(page) &&
@@ -226,12 +228,13 @@ static void f2fs_verify_and_finish_bio(struct bio *bio)
  */
 static void f2fs_handle_step_decompress(struct bio_post_read_ctx *ctx)
 {
+	int i;
 	struct bio_vec *bv;
-	int iter_all;
+	struct bvec_iter_all iter_all;
 	bool all_compressed = true;
 	block_t blkaddr = ctx->fs_blkaddr;
 
-	bio_for_each_segment_all(bv, ctx->bio, iter_all) {
+	bio_for_each_segment_all(bv, ctx->bio, i, iter_all) {
 		struct page *page = bv->bv_page;
 
 		/* PG_error was set if decryption failed. */
@@ -303,6 +306,7 @@ static void f2fs_read_end_io(struct bio *bio)
 
 static void f2fs_write_end_io(struct bio *bio)
 {
+	int i;
 	struct f2fs_sb_info *sbi;
 	struct bio_vec *bvec;
 	struct bvec_iter_all iter_all;
@@ -315,7 +319,7 @@ static void f2fs_write_end_io(struct bio *bio)
 		bio->bi_status = BLK_STS_IOERR;
 	}
 
-	bio_for_each_segment_all(bvec, bio, iter_all) {
+	bio_for_each_segment_all(bvec, bio, i, iter_all) {
 		struct page *page = bvec->bv_page;
 		enum count_type type = WB_DATA_TYPE(page);
 
@@ -597,6 +601,7 @@ static void __submit_merged_bio(struct f2fs_bio_info *io)
 static bool __has_merged_page(struct bio *bio, struct inode *inode,
 						struct page *page, nid_t ino)
 {
+	int i;
 	struct bio_vec *bvec;
 	struct bvec_iter_all iter_all;
 
@@ -606,7 +611,7 @@ static bool __has_merged_page(struct bio *bio, struct inode *inode,
 	if (!inode && !page && !ino)
 		return true;
 
-	bio_for_each_segment_all(bvec, bio, iter_all) {
+	bio_for_each_segment_all(bvec, bio, i, iter_all) {
 		struct page *target = bvec->bv_page;
 
 		if (fscrypt_is_bounce_page(target)) {
