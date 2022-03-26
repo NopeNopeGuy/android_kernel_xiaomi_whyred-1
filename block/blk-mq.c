@@ -3244,23 +3244,7 @@ static void __blk_mq_update_nr_hw_queues(struct blk_mq_tag_set *set,
 	blk_mq_update_queue_map(set);
 	list_for_each_entry(q, &set->tag_list, tag_set_list) {
 		blk_mq_realloc_hw_ctxs(set, q);
-<<<<<<< HEAD
 		blk_mq_queue_reinit(q);
-=======
-		if (q->nr_hw_queues != set->nr_hw_queues) {
-			pr_warn("Increasing nr_hw_queues to %d fails, fallback to %d\n",
-					nr_hw_queues, prev_nr_hw_queues);
-			set->nr_hw_queues = prev_nr_hw_queues;
-			blk_mq_map_queues(&set->map[HCTX_TYPE_DEFAULT]);
-			goto fallback;
-		}
-		blk_mq_map_swqueue(q);
-	}
-
-	list_for_each_entry(q, &set->tag_list, tag_set_list) {
-		blk_mq_sysfs_register(q);
-		blk_mq_debugfs_register_hctxs(q);
->>>>>>> 7d76f8562f4c4 (blk-mq: use HCTX_TYPE_DEFAULT but not 0 to index blk_mq_tag_set->map)
 	}
 
 switch_back:
