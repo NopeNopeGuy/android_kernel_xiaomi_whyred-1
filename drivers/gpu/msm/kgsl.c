@@ -62,6 +62,7 @@ struct dmabuf_list_entry {
 };
 
 struct kgsl_dma_buf_meta {
+	struct kgsl_device *device;
 	struct kgsl_mem_entry *entry;
 	struct dma_buf_attachment *attach;
 	struct dma_buf *dmabuf;
@@ -273,6 +274,8 @@ static void add_dmabuf_list(struct kgsl_dma_buf_meta *meta)
 		list_add(&dle->node, &kgsl_dmabuf_list);
 		meta->dle = dle;
 		list_add(&meta->node, &dle->dmabuf_list);
+		kgsl_trace_gpu_mem_total(meta->device,
+				 meta->entry->memdesc.size);
 	}
 	spin_unlock(&kgsl_dmabuf_lock);
 }
@@ -289,6 +292,8 @@ static void remove_dmabuf_list(struct kgsl_dma_buf_meta *meta)
 	if (list_empty(&dle->dmabuf_list)) {
 		list_del(&dle->node);
 		kfree(dle);
+		kgsl_trace_gpu_mem_total(meta->device,
+				-(meta->entry->memdesc.size));
 	}
 	spin_unlock(&kgsl_dmabuf_lock);
 }
@@ -350,6 +355,9 @@ static void kgsl_destroy_anon(struct kgsl_memdesc *memdesc)
 static void mem_entry_destroy(struct kgsl_mem_entry *entry)
 {
 	unsigned int memtype;
+
+	if (entry == NULL)
+		return;
 
 	/* pull out the memtype before the flags get cleared */
 	memtype = kgsl_memdesc_usermem_type(&entry->memdesc);
@@ -562,6 +570,21 @@ static int _kgsl_get_context_id(struct kgsl_device *device)
 	return id;
 }
 
+void kgsl_dump_active_contexts(struct kgsl_device *device)
+{
+	struct kgsl_context *tmp_context;
+	int tmp_id;
+
+	read_lock(&device->context_lock);
+	idr_for_each_entry (&device->context_idr, tmp_context, tmp_id) {
+		dev_warn(device->dev, "process %s pid %d created %d contexts",
+				tmp_context->proc_priv->comm,
+				tmp_context->proc_priv->pid,
+				tmp_context->proc_priv->ctxt_count);
+	}
+	read_unlock(&device->context_lock);
+}
+
 /**
  * kgsl_context_init() - helper to initialize kgsl_context members
  * @dev_priv: the owner of the context
@@ -589,8 +612,8 @@ int kgsl_context_init(struct kgsl_device_private *dev_priv,
 	spin_lock(&proc_priv->ctxt_count_lock);
 	if (atomic_read(&proc_priv->ctxt_count) > KGSL_MAX_CONTEXTS_PER_PROC) {
 		dev_err(device->dev,
-			     "Per process context limit reached for pid %u\n",
-			     pid_nr(dev_priv->process_priv->pid));
+				"Per process context limit reached for pid %u\n",
+				pid_nr(dev_priv->process_priv->pid));
 		spin_unlock(&proc_priv->ctxt_count_lock);
 		return -ENOSPC;
 	}
@@ -611,10 +634,12 @@ int kgsl_context_init(struct kgsl_device_private *dev_priv,
 	}
 
 	if (id < 0) {
-		if (id == -ENOSPC)
+		if (id == -ENOSPC) {
 			dev_warn(device->dev,
-				      "cannot have more than %zu contexts due to memstore limitation\n",
-				      KGSL_MEMSTORE_MAX);
+					"cannot have more than %zu contexts due to memstore limitation\n",
+					KGSL_MEMSTORE_MAX);
+			kgsl_dump_active_contexts(device);
+		}
 		atomic_dec(&proc_priv->ctxt_count);
 		return id;
 	}
@@ -848,12 +873,38 @@ static int kgsl_suspend(struct device *dev)
 	pm_message_t arg = {0};
 	struct kgsl_device *device = dev_get_drvdata(dev);
 
+	/*
+	 * Hacking the gmu and kgsl-iommu devices to force probing caused an
+	 * issue with suspend/resume. Need to silently succeed for these devices
+	 * since suspend/resume is handled by the main kgsl device.
+	 */
+	if (dev->of_node && dev->of_node->name) {
+		if (!strcmp(dev->of_node->name, "qcom,gmu") ||
+		     !strcmp(dev->of_node->name, "qcom,kgsl-iommu")) {
+			pr_debug("kgsl: suspend is handled by kgsl device\n");
+			return 0;
+		}
+	}
+
 	return kgsl_suspend_device(device, arg);
 }
 
 static int kgsl_resume(struct device *dev)
 {
 	struct kgsl_device *device = dev_get_drvdata(dev);
+
+	/*
+	 * Hacking the gmu and kgsl-iommu devices to force probing caused an
+	 * issue with suspend/resume. Need to silently succeed for these devices
+	 * since suspend/resume is handled by the main kgsl device.
+	 */
+	if (dev->of_node && dev->of_node->name) {
+		if (!strcmp(dev->of_node->name, "qcom,gmu") ||
+		     !strcmp(dev->of_node->name, "qcom,kgsl-iommu")) {
+			pr_debug("kgsl: resume is handled by kgsl device\n");
+			return 0;
+		}
+	}
 
 	return kgsl_resume_device(device);
 }
@@ -1009,7 +1060,7 @@ static struct kgsl_process_private *kgsl_process_private_new(
 
 	/* Allocate a pagetable for the new process object */
 	private->pagetable = kgsl_mmu_getpagetable(&device->mmu,
-							pid_nr(cur_pid));
+				pid_nr(cur_pid));
 	if (IS_ERR(private->pagetable)) {
 		int err = PTR_ERR(private->pagetable);
 
@@ -2610,15 +2661,6 @@ static int memdesc_sg_virt(struct kgsl_memdesc *memdesc, unsigned long useraddr)
 
 	ret = sg_alloc_table_from_pages(memdesc->sgt, pages, npages,
 					0, memdesc->size, GFP_KERNEL);
-
-	if (ret)
-		goto out;
-
-	ret = kgsl_cache_range_op(memdesc, 0, memdesc->size,
-			KGSL_CACHE_OP_FLUSH);
-
-	if (ret)
-		sg_free_table(memdesc->sgt);
 out:
 	if (ret) {
 		for (i = 0; i < npages; i++)
@@ -2656,12 +2698,6 @@ static int kgsl_setup_anon_useraddr(struct kgsl_pagetable *pagetable,
 		ret = kgsl_mmu_set_svm_region(pagetable,
 			(uint64_t) hostptr, (uint64_t) size);
 
-		/* if OOM, retry once after flushing mem_workqueue */
-		if (ret == -ENOMEM) {
-			flush_workqueue(kgsl_driver.mem_workqueue);
-			ret = kgsl_mmu_set_svm_region(pagetable,
-				(uint64_t) hostptr, (uint64_t) size);
-		}
 		if (ret)
 			return ret;
 
@@ -3072,6 +3108,7 @@ static int kgsl_setup_dma_buf(struct kgsl_device *device,
 	if (entry->memdesc.flags & KGSL_MEMFLAGS_IOCOHERENT)
 		attach->dma_map_attrs |= DMA_ATTR_SKIP_CPU_SYNC;
 
+	meta->device = device;
 	meta->dmabuf = dmabuf;
 	meta->attach = attach;
 	meta->entry = entry;
@@ -5023,11 +5060,6 @@ kgsl_get_unmapped_area(struct file *file, unsigned long addr,
 						pgoff, len, (int) val);
 	} else {
 		val = _get_svm_area(private, entry, addr, len, flags);
-		/* if OOM, retry once after flushing mem_workqueue */
-		if (val == -ENOMEM) {
-			flush_workqueue(kgsl_driver.mem_workqueue);
-			val = _get_svm_area(private, entry, addr, len, flags);
-		}
 		if (IS_ERR_VALUE(val))
 			dev_err_ratelimited(device->dev,
 					       "_get_svm_area: pid %d mmap_base %lx addr %lx pgoff %lx len %ld failed error %d\n",
@@ -5289,7 +5321,6 @@ int kgsl_of_property_read_ddrtype(struct device_node *node, const char *base,
 int kgsl_device_platform_probe(struct kgsl_device *device)
 {
 	int status = -EINVAL;
-	int cpu;
 
 	status = _register_device(device);
 	if (status)
@@ -5297,6 +5328,15 @@ int kgsl_device_platform_probe(struct kgsl_device *device)
 
 	/* Disable the sparse ioctl invocation as they are not used */
 	device->flags &= ~KGSL_FLAG_SPARSE;
+
+	device->events_wq = alloc_workqueue("kgsl-events",
+		WQ_UNBOUND | WQ_MEM_RECLAIM | WQ_SYSFS | WQ_HIGHPRI, 0);
+
+	if (!device->events_wq) {
+		dev_err(device->dev, "Failed to allocate events workqueue\n");
+		status = -ENOMEM;
+		goto error_pwrctrl_close;
+	}
 
 	kgsl_device_debugfs_init(device);
 
@@ -5343,15 +5383,20 @@ int kgsl_device_platform_probe(struct kgsl_device *device)
 		goto error_close_mmu;
 
 	/* Allocate memory for dma_parms and set the max_seg_size */
-	device->dev->dma_parms =
-		kzalloc(sizeof(*device->dev->dma_parms), GFP_KERNEL);
-
+	if (!device->dev->dma_parms) {
+		device->dev->dma_parms =
+			kzalloc(sizeof(*device->dev->dma_parms), GFP_KERNEL);
+		if (!device->dev->dma_parms) {
+			status = -ENOMEM;
+			goto error_close_mmu;
+		}
+	}
 	dma_set_max_seg_size(device->dev, KGSL_DMA_BIT_MASK);
 
 	/* Initialize the memory pools */
-	kgsl_init_page_pools(device);
+	kgsl_init_page_pools(device->pdev);
 
-	status = kgsl_reclaim_init(device);
+	status = kgsl_reclaim_init();
 	if (status)
 		goto error_close_mmu;
 
@@ -5376,25 +5421,6 @@ int kgsl_device_platform_probe(struct kgsl_device *device)
 				PM_QOS_CPU_DMA_LATENCY,
 				PM_QOS_DEFAULT_VALUE);
 
-	if (device->pwrctrl.l2pc_cpus_mask) {
-		struct pm_qos_request *qos = &device->pwrctrl.l2pc_cpus_qos;
-
-		qos->type = PM_QOS_REQ_AFFINE_CORES;
-
-		cpumask_empty(&qos->cpus_affine);
-		for_each_possible_cpu(cpu) {
-			if ((1 << cpu) & device->pwrctrl.l2pc_cpus_mask)
-				cpumask_set_cpu(cpu, &qos->cpus_affine);
-		}
-
-		pm_qos_add_request(&device->pwrctrl.l2pc_cpus_qos,
-				PM_QOS_CPU_DMA_LATENCY,
-				PM_QOS_DEFAULT_VALUE);
-	}
-
-	device->events_wq = alloc_workqueue("kgsl-events",
-		WQ_UNBOUND | WQ_MEM_RECLAIM | WQ_SYSFS | WQ_HIGHPRI, 0);
-
 	/* Initialize the snapshot engine */
 	kgsl_device_snapshot_init(device);
 
@@ -5416,7 +5442,10 @@ EXPORT_SYMBOL(kgsl_device_platform_probe);
 
 void kgsl_device_platform_remove(struct kgsl_device *device)
 {
-	destroy_workqueue(device->events_wq);
+	if (device->events_wq) {
+		destroy_workqueue(device->events_wq);
+		device->events_wq = NULL;
+	}
 
 	kfree(device->dev->dma_parms);
 	device->dev->dma_parms = NULL;
@@ -5425,11 +5454,19 @@ void kgsl_device_platform_remove(struct kgsl_device *device)
 
 	kgsl_exit_page_pools();
 
+	if (kgsl_driver.workqueue) {
+		destroy_workqueue(kgsl_driver.workqueue);
+		kgsl_driver.workqueue = NULL;
+	}
+
+	if (kgsl_driver.mem_workqueue) {
+		destroy_workqueue(kgsl_driver.mem_workqueue);
+		kgsl_driver.mem_workqueue = NULL;
+	}
+
 	kgsl_pwrctrl_uninit_sysfs(device);
 
 	pm_qos_remove_request(&device->pwrctrl.pm_qos_req_dma);
-	if (device->pwrctrl.l2pc_cpus_mask)
-		pm_qos_remove_request(&device->pwrctrl.l2pc_cpus_qos);
 
 	idr_destroy(&device->context_idr);
 	idr_destroy(&device->timelines);
@@ -5443,8 +5480,7 @@ void kgsl_device_platform_remove(struct kgsl_device *device)
 }
 EXPORT_SYMBOL(kgsl_device_platform_remove);
 
-static void
-_flush_mem_workqueue(struct work_struct *work)
+static void _flush_mem_workqueue(struct work_struct *work)
 {
 	flush_workqueue(kgsl_driver.mem_workqueue);
 }
@@ -5484,7 +5520,7 @@ static void kgsl_core_exit(void)
 static int __init kgsl_core_init(void)
 {
 	int result = 0;
-	struct sched_param param = { .sched_priority = 2 };
+	struct sched_param param = { .sched_priority = 16 };
 
 	/* alloc major and minor device numbers */
 	result = alloc_chrdev_region(&kgsl_driver.major, 0,
@@ -5549,8 +5585,20 @@ static int __init kgsl_core_init(void)
 	kgsl_driver.workqueue = alloc_workqueue("kgsl-workqueue",
 		WQ_UNBOUND | WQ_MEM_RECLAIM | WQ_SYSFS, 0);
 
+	if (!kgsl_driver.workqueue) {
+		pr_err("kgsl: Failed to allocate kgsl workqueue\n");
+		result = -ENOMEM;
+		goto err;
+	}
+
 	kgsl_driver.mem_workqueue = alloc_workqueue("kgsl-mementry",
 		WQ_UNBOUND | WQ_MEM_RECLAIM, 0);
+
+	if (!kgsl_driver.mem_workqueue) {
+		pr_err("kgsl: Failed to allocate mem workqueue\n");
+		result = -ENOMEM;
+		goto err;
+	}
 
 	INIT_WORK(&kgsl_driver.mem_work, _flush_mem_workqueue);
 
@@ -5564,7 +5612,7 @@ static int __init kgsl_core_init(void)
 		goto err;
 	}
 
-	sched_setscheduler(kgsl_driver.worker_thread, SCHED_FIFO, &param);
+	sched_setscheduler(kgsl_driver.worker_thread, SCHED_RR, &param);
 
 	kgsl_events_init();
 
