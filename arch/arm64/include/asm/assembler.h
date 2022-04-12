@@ -766,6 +766,7 @@ alternative_cb_end
 	ldp	x2, x3, [sp], #16
 	ldp	x0, x1, [sp], #16
 #endif /* CONFIG_MITIGATE_SPECTRE_BRANCH_HISTORY */
+	.endm
 
 	/*
 	 * Check whether preempt-disabled code should yield as soon as it
