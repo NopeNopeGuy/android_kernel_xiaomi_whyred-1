@@ -631,7 +631,6 @@ static void synchronize_rcu_expedited_wait(void)
 			return;
 		if (rcu_cpu_stall_suppress)
 			continue;
-		panic_on_rcu_stall();
 		pr_err("INFO: %s detected expedited stalls on CPUs/tasks: {",
 		       rcu_state.name);
 		ndetected = 0;
@@ -678,6 +677,7 @@ static void synchronize_rcu_expedited_wait(void)
 			}
 		}
 		jiffies_stall = 3 * rcu_exp_jiffies_till_stall_check() + 3;
+		panic_on_rcu_stall();
 	}
 }
 
