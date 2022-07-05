@@ -908,10 +908,8 @@ static void bfq_updated_next_req(struct bfq_data *bfqd,
 		 */
 		return;
 
-	new_budget = max_t(unsigned long,
-			   max_t(unsigned long, bfqq->max_budget,
-				 bfq_serv_to_charge(next_rq, bfqq)),
-			   entity->service);
+	new_budget = max_t(unsigned long, bfqq->max_budget,
+			   bfq_serv_to_charge(next_rq, bfqq));
 	if (entity->budget != new_budget) {
 		entity->budget = new_budget;
 		bfq_log_bfqq(bfqd, bfqq, "updated next rq: new budget %lu",
