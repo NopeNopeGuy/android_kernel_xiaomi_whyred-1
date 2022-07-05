@@ -108,14 +108,15 @@ struct bfq_sched_data {
 };
 
 /**
- * struct bfq_weight_counter - counter of the number of all active queues
+ * struct bfq_weight_counter - counter of the number of all active entities
  *                             with a given weight.
  */
 struct bfq_weight_counter {
-	unsigned int weight; /* weight of the queues this counter refers to */
-	unsigned int num_active; /* nr of active queues with this weight */
+	unsigned int weight; /* weight of the entities this counter refers to */
+	unsigned int num_active; /* nr of active entities with this weight */
 	/*
-	 * Weights tree member (see bfq_data's @queue_weights_tree)
+	 * Weights tree member (see bfq_data's @queue_weights_tree and
+	 * @group_weights_tree)
 	 */
 	struct rb_node weights_node;
 };
@@ -150,6 +151,8 @@ struct bfq_weight_counter {
 struct bfq_entity {
 	/* service_tree member */
 	struct rb_node rb_node;
+	/* pointer to the weight counter associated with this entity */
+	struct bfq_weight_counter *weight_counter;
 
 	/*
 	 * Flag, true if the entity is on a tree (either the active or
@@ -262,9 +265,6 @@ struct bfq_queue {
 
 	/* entity representing this queue in the scheduler */
 	struct bfq_entity entity;
-
-	/* pointer to the weight counter associated with this entity */
-	struct bfq_weight_counter *weight_counter;
 
 	/* maximum budget allowed from the feedback mechanism */
 	int max_budget;
@@ -449,9 +449,14 @@ struct bfq_data {
 	 */
 	struct rb_root queue_weights_tree;
 	/*
-	 * number of groups with requests still waiting for completion
+	 * rbtree of non-queue @bfq_entity weight counters, sorted by
+	 * weight. Used to keep track of whether all @bfq_groups have
+	 * the same weight. The tree contains one counter for each
+	 * distinct weight associated to some active @bfq_group (see
+	 * the comments to the functions bfq_weights_tree_[add|remove]
+	 * for further details).
 	 */
-	unsigned int num_active_groups;
+	struct rb_root group_weights_tree;
 
 	/*
 	 * Number of bfq_queues containing requests (including the
@@ -846,10 +851,10 @@ struct bfq_queue *bic_to_bfqq(struct bfq_io_cq *bic, bool is_sync);
 void bic_set_bfqq(struct bfq_io_cq *bic, struct bfq_queue *bfqq, bool is_sync);
 struct bfq_data *bic_to_bfqd(struct bfq_io_cq *bic);
 void bfq_pos_tree_add_move(struct bfq_data *bfqd, struct bfq_queue *bfqq);
-void bfq_weights_tree_add(struct bfq_data *bfqd, struct bfq_queue *bfqq,
+void bfq_weights_tree_add(struct bfq_data *bfqd, struct bfq_entity *entity,
 			  struct rb_root *root);
 void __bfq_weights_tree_remove(struct bfq_data *bfqd,
-			       struct bfq_queue *bfqq,
+			       struct bfq_entity *entity,
 			       struct rb_root *root);
 void bfq_weights_tree_remove(struct bfq_data *bfqd,
 			     struct bfq_queue *bfqq);
