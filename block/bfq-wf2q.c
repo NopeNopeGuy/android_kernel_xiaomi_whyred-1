@@ -1018,7 +1018,7 @@ static void __bfq_activate_entity(struct bfq_entity *entity,
 		entity->on_st = true;
 	}
 
-#ifdef CONFIG_BFQ_GROUP_IOSCHED
+#ifdef BFQ_GROUP_IOSCHED_ENABLED
 	if (!bfq_entity_to_bfqq(entity)) { /* bfq_group */
 		struct bfq_group *bfqg =
 			container_of(entity, struct bfq_group, entity);
