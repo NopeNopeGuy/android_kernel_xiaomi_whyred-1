@@ -2834,7 +2834,7 @@ static void bfq_dispatch_remove(struct request_queue *q, struct request *rq)
 	bfq_remove_request(q, rq);
 }
 
-static bool __bfq_bfqq_expire(struct bfq_data *bfqd, struct bfq_queue *bfqq)
+static void __bfq_bfqq_expire(struct bfq_data *bfqd, struct bfq_queue *bfqq)
 {
 	/*
 	 * If this bfqq is shared between multiple processes, check
@@ -2867,11 +2867,9 @@ static bool __bfq_bfqq_expire(struct bfq_data *bfqd, struct bfq_queue *bfqq)
 	/*
 	 * All in-service entities must have been properly deactivated
 	 * or requeued before executing the next function, which
-	 * resets all in-service entities as no more in service. This
-	 * may cause bfqq to be freed. If this happens, the next
-	 * function returns true.
+	 * resets all in-service entites as no more in service.
 	 */
-	return __bfq_bfqd_reset_in_service(bfqd);
+	__bfq_bfqd_reset_in_service(bfqd);
 }
 
 /**
@@ -3276,6 +3274,7 @@ void bfq_bfqq_expire(struct bfq_data *bfqd,
 	bool slow;
 	unsigned long delta = 0;
 	struct bfq_entity *entity = &bfqq->entity;
+	int ref;
 
 	/*
 	 * Check whether the process is slow (see bfq_bfqq_is_slow).
@@ -3360,8 +3359,10 @@ void bfq_bfqq_expire(struct bfq_data *bfqd,
 	 * reason.
 	 */
 	__bfq_bfqq_recalc_budget(bfqd, bfqq, reason);
-	if (__bfq_bfqq_expire(bfqd, bfqq))
-		/* bfqq is gone, no more actions on it */
+	ref = bfqq->ref;
+	__bfq_bfqq_expire(bfqd, bfqq);
+
+	if (ref == 1) /* bfqq is gone, no more actions on it */
 		return;
 
 	bfqq->injected_service = 0;
