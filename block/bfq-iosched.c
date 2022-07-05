@@ -1381,15 +1381,7 @@ static bool bfq_bfqq_update_budg_for_activation(struct bfq_data *bfqd,
 {
 	struct bfq_entity *entity = &bfqq->entity;
 
-	/*
-	 * In the next compound condition, we check also whether there
-	 * is some budget left, because otherwise there is no point in
-	 * trying to go on serving bfqq with this same budget: bfqq
-	 * would be expired immediately after being selected for
-	 * service. This would only cause useless overhead.
-	 */
-	if (bfq_bfqq_non_blocking_wait_rq(bfqq) && arrived_in_time &&
-	    bfq_bfqq_budget_left(bfqq) > 0) {
+	if (bfq_bfqq_non_blocking_wait_rq(bfqq) && arrived_in_time) {
 		/*
 		 * We do not clear the flag non_blocking_wait_rq here, as
 		 * the latter is used in bfq_activate_bfqq to signal
