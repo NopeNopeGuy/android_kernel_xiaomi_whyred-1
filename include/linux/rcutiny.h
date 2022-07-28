@@ -30,9 +30,18 @@
 /* Never flag non-existent other CPUs! */
 static inline bool rcu_eqs_special_set(int cpu) { return false; }
 
+struct rcu_gp_oldstate {
+	unsigned long rgos_norm;
+};
+
 unsigned long get_state_synchronize_rcu(void);
 unsigned long start_poll_synchronize_rcu(void);
 bool poll_state_synchronize_rcu(unsigned long oldstate);
+
+static inline bool poll_state_synchronize_rcu_full(struct rcu_gp_oldstate *rgosp)
+{
+	return poll_state_synchronize_rcu(rgosp->rgos_norm);
+}
 
 static inline void cond_synchronize_rcu(unsigned long oldstate)
 {

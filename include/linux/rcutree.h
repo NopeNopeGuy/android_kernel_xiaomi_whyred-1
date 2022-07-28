@@ -51,11 +51,19 @@ void kvfree_call_rcu(struct rcu_head *head, rcu_callback_t func);
 void rcu_barrier(void);
 bool rcu_eqs_special_set(int cpu);
 void kfree_rcu_scheduler_running(void);
+
+struct rcu_gp_oldstate {
+	unsigned long rgos_norm;
+	unsigned long rgos_exp;
+	unsigned long rgos_polled;
+};
+
 unsigned long start_poll_synchronize_rcu_expedited(void);
 void cond_synchronize_rcu_expedited(unsigned long oldstate);
 unsigned long get_state_synchronize_rcu(void);
 unsigned long start_poll_synchronize_rcu(void);
 bool poll_state_synchronize_rcu(unsigned long oldstate);
+bool poll_state_synchronize_rcu_full(struct rcu_gp_oldstate *rgosp);
 void cond_synchronize_rcu(unsigned long oldstate);
 
 void rcu_idle_enter(void);
