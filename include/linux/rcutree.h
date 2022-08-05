@@ -55,7 +55,6 @@ void kfree_rcu_scheduler_running(void);
 struct rcu_gp_oldstate {
 	unsigned long rgos_norm;
 	unsigned long rgos_exp;
-	unsigned long rgos_polled;
 };
 
 unsigned long start_poll_synchronize_rcu_expedited(void);
