@@ -443,7 +443,7 @@ static unsigned long srcu_readers_lock_idx(struct srcu_struct *ssp, int idx)
 	for_each_possible_cpu(cpu) {
 		struct srcu_data *cpuc = per_cpu_ptr(ssp->sda, cpu);
 
-		sum += READ_ONCE(cpuc->srcu_lock_count[idx]);
+		sum += atomic_long_read(&cpuc->srcu_lock_count[idx]);
 	}
 	return sum;
 }
@@ -460,7 +460,7 @@ static unsigned long srcu_readers_unlock_idx(struct srcu_struct *ssp, int idx)
 	for_each_possible_cpu(cpu) {
 		struct srcu_data *cpuc = per_cpu_ptr(ssp->sda, cpu);
 
-		sum += READ_ONCE(cpuc->srcu_unlock_count[idx]);
+		sum += atomic_long_read(&cpuc->srcu_unlock_count[idx]);
 	}
 	return sum;
 }
@@ -529,10 +529,10 @@ static bool srcu_readers_active(struct srcu_struct *ssp)
 	for_each_possible_cpu(cpu) {
 		struct srcu_data *cpuc = per_cpu_ptr(ssp->sda, cpu);
 
-		sum += READ_ONCE(cpuc->srcu_lock_count[0]);
-		sum += READ_ONCE(cpuc->srcu_lock_count[1]);
-		sum -= READ_ONCE(cpuc->srcu_unlock_count[0]);
-		sum -= READ_ONCE(cpuc->srcu_unlock_count[1]);
+		sum += atomic_long_read(&cpuc->srcu_lock_count[0]);
+		sum += atomic_long_read(&cpuc->srcu_lock_count[1]);
+		sum -= atomic_long_read(&cpuc->srcu_unlock_count[0]);
+		sum -= atomic_long_read(&cpuc->srcu_unlock_count[1]);
 	}
 	return sum;
 }
@@ -662,7 +662,7 @@ int __srcu_read_lock(struct srcu_struct *ssp)
 	int idx;
 
 	idx = READ_ONCE(ssp->srcu_idx) & 0x1;
-	this_cpu_inc(ssp->sda->srcu_lock_count[idx]);
+	this_cpu_inc(ssp->sda->srcu_lock_count[idx].counter);
 	smp_mb(); /* B */  /* Avoid leaking the critical section. */
 	return idx;
 }
@@ -676,7 +676,7 @@ EXPORT_SYMBOL_GPL(__srcu_read_lock);
 void __srcu_read_unlock(struct srcu_struct *ssp, int idx)
 {
 	smp_mb(); /* C */  /* Avoid leaking the critical section. */
-	this_cpu_inc(ssp->sda->srcu_unlock_count[idx]);
+	this_cpu_inc(ssp->sda->srcu_unlock_count[idx].counter);
 }
 EXPORT_SYMBOL_GPL(__srcu_read_unlock);
 
@@ -1712,8 +1712,8 @@ void srcu_torture_stats_print(struct srcu_struct *ssp, char *tt, char *tf)
 			struct srcu_data *sdp;
 
 			sdp = per_cpu_ptr(ssp->sda, cpu);
-			u0 = data_race(sdp->srcu_unlock_count[!idx]);
-			u1 = data_race(sdp->srcu_unlock_count[idx]);
+			u0 = data_race(atomic_long_read(&sdp->srcu_unlock_count[!idx]));
+			u1 = data_race(atomic_long_read(&sdp->srcu_unlock_count[idx]));
 
 			/*
 			 * Make sure that a lock is always counted if the corresponding
@@ -1721,8 +1721,8 @@ void srcu_torture_stats_print(struct srcu_struct *ssp, char *tt, char *tf)
 			 */
 			smp_rmb();
 
-			l0 = data_race(sdp->srcu_lock_count[!idx]);
-			l1 = data_race(sdp->srcu_lock_count[idx]);
+			l0 = data_race(atomic_long_read(&sdp->srcu_lock_count[!idx]));
+			l1 = data_race(atomic_long_read(&sdp->srcu_lock_count[idx]));
 
 			c0 = l0 - u0;
 			c1 = l1 - u1;
