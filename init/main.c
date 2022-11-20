@@ -692,7 +692,6 @@ asmlinkage __visible void __init start_kernel(void)
 	random_init();
 
 	/* These make use of the fully initialized rng */
-	kfence_init();
 	boot_init_stack_canary();
 
 	perf_event_init();
