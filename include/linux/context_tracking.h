@@ -119,7 +119,7 @@ static inline void guest_enter_irqoff(void)
 	 * we do with user-mode execution.
 	 */
 	if (!context_tracking_cpu_is_enabled())
-		rcu_virt_note_context_switch(smp_processor_id());
+		rcu_virt_note_context_switch();
 }
 
 static inline void guest_exit_irqoff(void)
@@ -143,7 +143,7 @@ static inline void guest_enter_irqoff(void)
 	 */
 	vtime_account_system(current);
 	current->flags |= PF_VCPU;
-	rcu_virt_note_context_switch(smp_processor_id());
+	rcu_virt_note_context_switch();
 }
 
 static inline void guest_exit_irqoff(void)
