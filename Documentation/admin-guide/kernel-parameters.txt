@@ -4206,6 +4206,11 @@
 	rcupdate.rcu_cpu_stall_timeout= [KNL]
 			Set timeout for RCU CPU stall warning messages.
 
+	rcupdate.rcu_exp_stall_task_details= [KNL]
+			Print stack dumps of any tasks blocking the
+			current expedited RCU grace period during an
+			expedited RCU CPU stall warning.
+
 	rcupdate.rcu_expedited= [KNL]
 			Use expedited grace-period primitives, for
 			example, synchronize_rcu_expedited() instead
