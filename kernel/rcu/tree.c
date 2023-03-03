@@ -2396,7 +2396,7 @@ static void rcu_do_batch(struct rcu_data *rdp)
 	WARN_ON_ONCE(cpu_is_offline(smp_processor_id()));
 	pending = rcu_segcblist_n_cbs(&rdp->cblist);
 	bl = max(rdp->blimit, pending >> rcu_divisor);
-	if (in_serving_softirq() && unlikely(bl > 100)) {
+	if (in_serving_softirq() && unlikely(bl > 100))
 		tlimit = local_clock() + rcu_resched_ns;
 	trace_rcu_batch_start(rcu_state.name,
 			      rcu_segcblist_n_cbs(&rdp->cblist), bl);

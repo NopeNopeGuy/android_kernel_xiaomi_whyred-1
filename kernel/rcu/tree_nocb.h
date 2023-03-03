@@ -16,10 +16,13 @@
 #ifdef CONFIG_RCU_NOCB_CPU
 static cpumask_var_t rcu_nocb_mask; /* CPUs to have callbacks offloaded. */
 static bool __read_mostly rcu_nocb_poll;    /* Offload kthread are to poll. */
+
+#ifdef CONFIG_LOCKDEP
 static inline int rcu_lockdep_is_held_nocb(struct rcu_data *rdp)
 {
 	return lockdep_is_held(&rdp->nocb_lock);
 }
+#endif
 
 static inline bool rcu_current_is_nocb_kthread(struct rcu_data *rdp)
 {
@@ -1369,7 +1372,7 @@ EXPORT_SYMBOL_GPL(rcu_bind_current_to_nocb);
 #ifdef CONFIG_SMP
 static char *show_rcu_should_be_on_cpu(struct task_struct *tsp)
 {
-	return tsp && task_is_running(tsp) && !tsp->on_cpu ? "!" : "";
+	return tsp && !tsp->state && !tsp->on_cpu ? "!" : "";
 }
 #else // #ifdef CONFIG_SMP
 static char *show_rcu_should_be_on_cpu(struct task_struct *tsp)
