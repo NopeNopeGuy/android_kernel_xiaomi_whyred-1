@@ -522,8 +522,6 @@ static int __noreturn rcu_tasks_kthread(void *arg)
 
 		/* Paranoid sleep to keep this from entering a tight loop */
 		schedule_timeout_idle(rtp->gp_sleep);
-
-		set_tasks_gp_state(rtp, RTGS_WAIT_CBS);
 	}
 }
 
