@@ -1341,7 +1341,7 @@ void __init rcu_init_nohz(void)
 		cpumask_or(rcu_nocb_mask, rcu_nocb_mask, tick_nohz_full_mask);
 #endif /* #if defined(CONFIG_NO_HZ_FULL) */
 
-	if (register_shrinker(&lazy_rcu_shrinker, "rcu-lazy"))
+	if (register_shrinker(&lazy_rcu_shrinker))
 		pr_err("Failed to register lazy_rcu shrinker!\n");
 
 	if (!cpumask_subset(rcu_nocb_mask, cpu_possible_mask)) {
