@@ -1299,7 +1299,7 @@ void __init rcu_init_nohz(void)
 		pr_err("Failed to register lazy_rcu shrinker!\n");
 
 	if (offload_all)
-		cpumask_setall(rcu_nocb_mask)
+		cpumask_setall(rcu_nocb_mask);
 
 	if (!cpumask_subset(rcu_nocb_mask, cpu_possible_mask)) {
 		pr_info("\tNote: kernel parameter 'rcu_nocbs=', 'nohz_full', or 'isolcpus=' contains nonexistent CPUs.\n");
@@ -1311,6 +1311,7 @@ void __init rcu_init_nohz(void)
 	else
 		pr_info("\tOffload RCU callbacks from CPUs: %*pbl.\n",
 			cpumask_pr_args(rcu_nocb_mask));
+
 	if (rcu_nocb_poll)
 		pr_info("\tPoll for callbacks from no-CBs CPUs.\n");
 
