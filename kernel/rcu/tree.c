@@ -4379,7 +4379,7 @@ static void __init rcu_start_exp_gp_kworkers(void)
 {
 	const char *par_gp_kworker_name = "rcu_exp_par_gp_kthread_worker";
 	const char *gp_kworker_name = "rcu_exp_gp_kthread_worker";
-	struct sched_param param = { .sched_priority = kthread_prio };
+	static const struct sched_param sched_zero_prio;
 
 	rcu_exp_gp_kworker = kthread_create_worker(0, gp_kworker_name);
 	if (IS_ERR_OR_NULL(rcu_exp_gp_kworker)) {
@@ -4394,9 +4394,9 @@ static void __init rcu_start_exp_gp_kworkers(void)
 		return;
 	}
 
-	sched_setscheduler_nocheck(rcu_exp_gp_kworker->task, SCHED_FIFO, &param);
-	sched_setscheduler_nocheck(rcu_exp_par_gp_kworker->task, SCHED_FIFO,
-				   &param);
+	sched_setscheduler_nocheck(rcu_exp_gp_kworker->task, SCHED_RR, &sched_zero_prio);
+	sched_setscheduler_nocheck(rcu_exp_par_gp_kworker->task, SCHED_RR,
+				   &sched_zero_prio);
 }
 
 static inline void rcu_alloc_par_gp_wq(void)
