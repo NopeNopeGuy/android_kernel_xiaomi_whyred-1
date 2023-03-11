@@ -152,12 +152,12 @@ static void percpu_ref_switch_to_atomic_rcu(struct rcu_head *rcu)
 	 */
 	atomic_long_add((long)count - PERCPU_COUNT_BIAS, &ref->count);
 
-	if (WARN_ONCE(atomic_long_read(&data->count) <= 0,
+	if (WARN_ONCE(atomic_long_read(&ref->count) <= 0,
 		      "percpu ref (%ps) <= 0 (%ld) after switching to atomic",
-		      data->release, atomic_long_read(&data->count)) &&
+		      ref->release, atomic_long_read(&ref->count)) &&
 	    atomic_inc_return(&underflows) < 4) {
 		pr_err("%s(): percpu_ref underflow", __func__);
-		mem_dump_obj(data);
+		mem_dump_obj(ref);
 	}
 
 	/* @ref is viewed as dead on all CPUs, send out switch confirmation */

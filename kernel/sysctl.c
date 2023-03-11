@@ -138,6 +138,7 @@ static int __maybe_unused four = 4;
 static unsigned long zero_ul;
 static unsigned long one_ul = 1;
 static unsigned long long_max = LONG_MAX;
+static int int_max = INT_MAX;
 static int one_hundred = 100;
 static int one_thousand = 1000;
 #ifdef CONFIG_PRINTK
@@ -1631,8 +1632,8 @@ static struct ctl_table kern_table[] = {
 		.maxlen		= sizeof(sysctl_max_rcu_stall_to_panic),
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec_minmax,
-		.extra1		= SYSCTL_ONE,
-		.extra2		= SYSCTL_INT_MAX,
+		.extra1		= &one,
+		.extra2		= &int_max,
 	},
 #endif
 #if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
