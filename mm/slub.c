@@ -3835,7 +3835,7 @@ void kmem_obj_info(struct kmem_obj_info *kpp, void *object, struct page *page)
 #else
 	objp = objp0;
 #endif
-	objnr = obj_to_index(s, page, objp);
+	objnr = slab_index(objp, s, page);
 	kpp->kp_data_offset = (unsigned long)((char *)objp0 - (char *)objp);
 	objp = base + s->size * objnr;
 	kpp->kp_objp = objp;
