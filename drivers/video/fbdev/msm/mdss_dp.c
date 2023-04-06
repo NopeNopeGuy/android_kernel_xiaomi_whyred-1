@@ -38,6 +38,10 @@
 #define DP_CRYPTO_CLK_RATE_KHZ 337500
 #define DP_STRING_SIZE		30
 
+#if defined(CONFIG_MACH_XIAOMI_WHYRED) || defined(CONFIG_MACH_XIAOMI_TULIP)
+#define TARGET_MICRO_USB 1
+#endif
+
 struct mdss_dp_attention_node {
 	u32 vdo;
 	struct list_head list;
@@ -1089,6 +1093,7 @@ static int mdss_dp_wait4video_ready(struct mdss_dp_drv_pdata *dp_drv)
 	return ret;
 }
 
+#ifndef TARGET_MICRO_USB
 static void mdss_dp_update_cable_status(struct mdss_dp_drv_pdata *dp,
 		bool connected)
 {
@@ -1100,6 +1105,7 @@ static void mdss_dp_update_cable_status(struct mdss_dp_drv_pdata *dp,
 		pr_debug("no change in cable status\n");
 	mutex_unlock(&dp->attention_lock);
 }
+#endif
 
 static int dp_get_cable_status(struct platform_device *pdev, u32 vote)
 {
@@ -3731,6 +3737,7 @@ static void mdss_dp_reset_sw_state(struct mdss_dp_drv_pdata *dp)
 	complete_all(&dp->notification_comp);
 }
 
+#ifndef TARGET_MICRO_USB
 static void usbpd_connect_callback(struct usbpd_svid_handler *hdlr,
 		bool supports_usb_comm)
 {
@@ -3839,6 +3846,7 @@ static int mdss_dp_validate_callback(u8 cmd,
 end:
 	return ret;
 }
+#endif
 
 /**
  * mdss_dp_send_test_response() - sends the test response to the sink
@@ -4247,6 +4255,7 @@ exit:
 	return ret;
 }
 
+#ifndef TARGET_MICRO_USB
 static void usbpd_response_callback(struct usbpd_svid_handler *hdlr, u8 cmd,
 				enum usbpd_svdm_cmd_type cmd_type,
 				const u32 *vdos, int num_vdos)
@@ -4318,6 +4327,7 @@ static void usbpd_response_callback(struct usbpd_svid_handler *hdlr, u8 cmd,
 		break;
 	}
 }
+#endif
 
 static void mdss_dp_process_attention(struct mdss_dp_drv_pdata *dp_drv)
 {
@@ -4456,7 +4466,7 @@ exit:
 	pr_debug("exit\n");
 }
 
-#if !defined(CONFIG_MACH_XIAOMI_WHYRED) || !defined(CONFIG_MACH_XIAOMI_TULIP)
+#ifndef TARGET_MICRO_USB
 static int mdss_dp_usbpd_setup(struct mdss_dp_drv_pdata *dp_drv)
 {
 	int ret = 0;
@@ -4540,7 +4550,7 @@ static int mdss_dp_probe(struct platform_device *pdev)
 	init_completion(&dp_drv->video_comp);
 	init_completion(&dp_drv->audio_comp);
 
-#if !defined(CONFIG_MACH_XIAOMI_WHYRED) || !defined(CONFIG_MACH_XIAOMI_TULIP)
+#ifndef TARGET_MICRO_USB
 	if (mdss_dp_usbpd_setup(dp_drv)) {
 		pr_err("Error usbpd setup!\n");
 		dp_drv = NULL;
