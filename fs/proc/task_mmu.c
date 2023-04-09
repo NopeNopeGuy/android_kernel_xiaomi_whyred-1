@@ -19,7 +19,7 @@
 #include <linux/shmem_fs.h>
 #include <linux/uaccess.h>
 #include <linux/pkeys.h>
-#include <linux/pagewalk.h>
+#include <linux/mm_inline.h>
 
 #include <asm/elf.h>
 #include <asm/tlb.h>
@@ -1769,7 +1769,7 @@ static int reclaim_pte_range(pmd_t *pmd, unsigned long addr,
 		list_add(&page->lru, &page_list);
 		if (isolated >= SWAP_CLUSTER_MAX) {
 			pte_unmap_unlock(orig_pte, ptl);
-			reclaim_pages_from_list(&page_list);
+			reclaim_pages(&page_list);
 			isolated = 0;
 			pte = pte_offset_map_lock(vma->vm_mm, pmd, addr, &ptl);
 			orig_pte = pte;
@@ -1777,7 +1777,7 @@ static int reclaim_pte_range(pmd_t *pmd, unsigned long addr,
 	}
 
 	pte_unmap_unlock(orig_pte, ptl);
-	reclaim_pages_from_list(&page_list);
+	reclaim_pages(&page_list);
 
 	cond_resched();
 	return 0;
@@ -1820,7 +1820,7 @@ static ssize_t reclaim_write(struct file *file, const char __user *buf,
 
 	mm = get_task_mm(task);
 	if (mm) {
-		struct mm_walk_ops reclaim_walk_ops = {
+		struct mm_walk reclaim_walk = {
 			.pmd_entry = reclaim_pte_range,
 		};
 
@@ -1837,7 +1837,6 @@ static ssize_t reclaim_write(struct file *file, const char __user *buf,
 			if (type == RECLAIM_FILE && vma_is_anonymous(vma))
 				continue;
 
-
 			if (vma_is_anonymous(vma)) {
 				if (get_nr_swap_pages() <= 0 ||
 					get_mm_counter(mm, MM_ANONPAGES) == 0) {
@@ -1851,11 +1850,8 @@ static ssize_t reclaim_write(struct file *file, const char __user *buf,
 				reclaim_walk_ops.pmd_entry = deactivate_pte_range;
 			}
 
-
-			err = walk_page_range(mm, vma->vm_start, vma->vm_end,
-					&reclaim_walk_ops, vma);
-			if (err)
-				break;
+			walk_page_range(vma->vm_start, vma->vm_end,
+					&reclaim_walk);
 		}
 		flush_tlb_mm(mm);
 		up_read(&mm->mmap_sem);
