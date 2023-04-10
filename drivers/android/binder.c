@@ -209,14 +209,6 @@ struct binder_stats {
 	atomic_t obj_deleted[BINDER_STAT_COUNT];
 };
 
-static struct kmem_cache *binder_node_pool;
-static struct kmem_cache *binder_proc_pool;
-static struct kmem_cache *binder_ref_death_pool;
-static struct kmem_cache *binder_ref_pool;
-static struct kmem_cache *binder_thread_pool;
-static struct kmem_cache *binder_transaction_pool;
-static struct kmem_cache *binder_work_pool;
-
 #ifdef CONFIG_ANDROID_BINDER_LOGS
 static struct binder_stats binder_stats;
 
