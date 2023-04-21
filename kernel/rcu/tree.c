@@ -4298,8 +4298,8 @@ static void __init rcu_start_exp_gp_kworkers(void)
 		return;
 	}
 
-	sched_setscheduler_nocheck(rcu_exp_gp_kworker->task, SCHED_FIFO, &param);
-	sched_setscheduler_nocheck(rcu_exp_par_gp_kworker->task, SCHED_FIFO,
+	sched_setscheduler_nocheck(rcu_exp_gp_kworker->task, SCHED_RR, &param);
+	sched_setscheduler_nocheck(rcu_exp_par_gp_kworker->task, SCHED_RR,
 				   &param);
 }
 
