@@ -22,7 +22,7 @@ jobs:
       with:
         arch: arm64
         compiler: proton-clang/master/binutils
-        defconfig: vendor/bouquet_defconfig
+        defconfig: vendor/whyred_defconfig
         image: Image.gz-dtb
         
     - name: upload
